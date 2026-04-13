@@ -1,0 +1,28 @@
+# Root .gitignore for project
+
+# macOS
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Ignore backend and frontend build artifacts explicitly
+/backend/target/
+/frontend/node_modules/
+/frontend/.next/
+
+# Environment files
+.env
+.env.local
+
+# Backend config files to ignore
+/backend/src/main/resources/application*.properties
+/backend/src/main/resources/*.yml
+
+# Frontend env variants (allow example)
+/frontend/.env*
+!/frontend/.env.example

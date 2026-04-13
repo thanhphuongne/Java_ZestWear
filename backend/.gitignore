@@ -1,0 +1,39 @@
+# Maven / Java
+target/
+*.class
+
+# Log files
+logs/
+*.log
+
+# IDE files
+.idea/
+*.iml
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# NetBeans
+/nbproject/private/
+
+# macOS
+.DS_Store
+
+# Env files
+.env
+.env.local
+
+# Spring Boot / application config
+src/main/resources/application*.properties
+src/main/resources/application*.yml
+# Ignore any additional local resource overrides
+src/main/resources/*.local
+
+# Keystore and certificates
+*.jks
+*.keystore
+*.p12
+*.pem
+*.crt

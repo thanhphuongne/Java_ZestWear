@@ -26,7 +26,7 @@ public class UsersController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<User>>> list(@RequestHeader(value = "Authorization", required = false) String auth) {
         User me = authService.getUserFromAuth(auth);
-        if (!authService.isAdmin(me)) return ResponseEntity.status(403).body(new ApiResponse<>(false, "Forbidden", null));
+        if (!authService.isAdmin(me)) return ResponseEntity.status(403).body(new ApiResponse<List<User>>(false, "Forbidden", null));
         List<User> users = userRepository.findAll();
         users.forEach(u -> u.setPassword(null));
         return ResponseEntity.ok(new ApiResponse<>(true, null, users));
@@ -35,32 +35,32 @@ public class UsersController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<User>> get(@RequestHeader(value = "Authorization", required = false) String auth, @PathVariable Long id) {
         User me = authService.getUserFromAuth(auth);
-        if (!authService.isAdmin(me)) return ResponseEntity.status(403).body(new ApiResponse<>(false, "Forbidden", null));
-        return userRepository.findById(id).map(u -> { u.setPassword(null); return ResponseEntity.ok(new ApiResponse<>(true, null, u)); }).orElse(ResponseEntity.notFound().build());
+        if (!authService.isAdmin(me)) return ResponseEntity.status(403).body(new ApiResponse<User>(false, "Forbidden", null));
+        return userRepository.findById(id).map(u -> { u.setPassword(null); return ResponseEntity.ok(new ApiResponse<>(true, null, u)); }).orElse(ResponseEntity.status(404).body(new ApiResponse<User>(false, "Not Found", null)));
     }
 
     @PutMapping("/{id}/role")
     public ResponseEntity<ApiResponse<User>> updateRole(@RequestHeader(value = "Authorization", required = false) String auth, @PathVariable Long id, @RequestBody Map<String, String> body) {
         User me = authService.getUserFromAuth(auth);
-        if (!authService.isAdmin(me)) return ResponseEntity.status(403).body(new ApiResponse<>(false, "Forbidden", null));
+        if (!authService.isAdmin(me)) return ResponseEntity.status(403).body(new ApiResponse<User>(false, "Forbidden", null));
         String role = body.get("role");
         return userRepository.findById(id).map(u -> {
             u.setRole(role);
             userRepository.save(u);
             u.setPassword(null);
             return ResponseEntity.ok(new ApiResponse<>(true, "Updated", u));
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.status(404).body(new ApiResponse<User>(false, "Not Found", null)));
     }
 
     @PutMapping("/{id}/toggle-active")
     public ResponseEntity<ApiResponse<User>> toggleActive(@RequestHeader(value = "Authorization", required = false) String auth, @PathVariable Long id) {
         User me = authService.getUserFromAuth(auth);
-        if (!authService.isAdmin(me)) return ResponseEntity.status(403).body(new ApiResponse<>(false, "Forbidden", null));
+        if (!authService.isAdmin(me)) return ResponseEntity.status(403).body(new ApiResponse<User>(false, "Forbidden", null));
         return userRepository.findById(id).map(u -> {
             u.setActive(!u.getActive());
             userRepository.save(u);
             u.setPassword(null);
             return ResponseEntity.ok(new ApiResponse<>(true, "Toggled", u));
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.status(404).body(new ApiResponse<User>(false, "Not Found", null)));
     }
 }

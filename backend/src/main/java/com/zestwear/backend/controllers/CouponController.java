@@ -29,19 +29,19 @@ public class CouponController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Coupon>> get(@PathVariable Long id) {
-        return couponRepository.findById(id).map(c -> ResponseEntity.ok(new ApiResponse<>(true, null, c))).orElse(ResponseEntity.notFound().build());
+        return couponRepository.findById(id).map(c -> ResponseEntity.ok(new ApiResponse<>(true, null, c))).orElse(ResponseEntity.status(404).body(new ApiResponse<Coupon>(false, "Not Found", null)));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<Coupon>> create(@RequestHeader(value = "Authorization", required = false) String auth, @RequestBody Coupon coupon) {
-        if (!authService.isAdmin(authService.getUserFromAuth(auth))) return ResponseEntity.status(403).body(new ApiResponse<>(false, "Forbidden", null));
+        if (!authService.isAdmin(authService.getUserFromAuth(auth))) return ResponseEntity.status(403).body(new ApiResponse<Coupon>(false, "Forbidden", null));
         Coupon saved = couponRepository.save(coupon);
         return ResponseEntity.ok(new ApiResponse<>(true, "Created", saved));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Coupon>> update(@RequestHeader(value = "Authorization", required = false) String auth, @PathVariable Long id, @RequestBody Coupon updated) {
-        if (!authService.isAdmin(authService.getUserFromAuth(auth))) return ResponseEntity.status(403).body(new ApiResponse<>(false, "Forbidden", null));
+        if (!authService.isAdmin(authService.getUserFromAuth(auth))) return ResponseEntity.status(403).body(new ApiResponse<Coupon>(false, "Forbidden", null));
         return couponRepository.findById(id).map(c -> {
             c.setCode(updated.getCode());
             c.setType(updated.getType());
@@ -51,11 +51,11 @@ public class CouponController {
             c.setExpiresAt(updated.getExpiresAt());
             couponRepository.save(c);
             return ResponseEntity.ok(new ApiResponse<>(true, "Updated", c));
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.status(404).body(new ApiResponse<Coupon>(false, "Not Found", null)));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@RequestHeader(value = "Authorization", required = false) String auth, @PathVariable Long id) {
+    public ResponseEntity<?> delete(@RequestHeader(value = "Authorization", required = false) String auth, @PathVariable Long id) {
         if (!authService.isAdmin(authService.getUserFromAuth(auth))) return ResponseEntity.status(403).build();
         return couponRepository.findById(id).map(c -> {
             couponRepository.delete(c);

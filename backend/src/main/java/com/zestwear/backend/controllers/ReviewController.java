@@ -34,7 +34,7 @@ public class ReviewController {
     @PostMapping
     public ResponseEntity<ApiResponse<Review>> create(@RequestHeader(value = "Authorization", required = false) String auth, @RequestBody Review review) {
         User me = authService.getUserFromAuth(auth);
-        if (me == null) return ResponseEntity.status(401).body(new ApiResponse<>(false, "Unauthorized", null));
+        if (me == null) return ResponseEntity.status(401).body(new ApiResponse<Review>(false, "Unauthorized", null));
         review.setUserId(me.getId());
         Review saved = reviewRepository.save(review);
         return ResponseEntity.ok(new ApiResponse<>(true, "Created", saved));
@@ -50,6 +50,6 @@ public class ReviewController {
                 return ResponseEntity.ok(new ApiResponse<>(true, "Deleted", null));
             }
             return ResponseEntity.status(403).body(new ApiResponse<>(false, "Forbidden", null));
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.status(404).body(new ApiResponse<Object>(false, "Not Found", null)));
     }
 }

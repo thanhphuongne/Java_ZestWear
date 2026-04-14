@@ -73,20 +73,20 @@ public class ProductController {
     @GetMapping("/id/{id}")
     public ResponseEntity<ApiResponse<Product>> getById(@PathVariable Long id) {
         return productRepository.findById(id)
-                .map(p -> ResponseEntity.ok(new ApiResponse<>(true, null, p)))
-                .orElse(ResponseEntity.notFound().build());
+            .map(p -> ResponseEntity.ok(new ApiResponse<>(true, null, p)))
+            .orElse(ResponseEntity.status(404).body(new ApiResponse<Product>(false, "Not Found", null)));
     }
 
     @GetMapping("/{slug}")
     public ResponseEntity<ApiResponse<Product>> getBySlug(@PathVariable String slug) {
         Product p = productRepository.findBySlug(slug);
-        if (p == null) return ResponseEntity.notFound().build();
+        if (p == null) return ResponseEntity.status(404).body(new ApiResponse<Product>(false, "Not Found", null));
         return ResponseEntity.ok(new ApiResponse<>(true, null, p));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<Product>> create(@RequestHeader(value = "Authorization", required = false) String auth, @RequestBody Product product) {
-        if (!authService.isStaffOrAdmin(authService.getUserFromAuth(auth))) return ResponseEntity.status(403).body(new ApiResponse<>(false, "Forbidden", null));
+        if (!authService.isStaffOrAdmin(authService.getUserFromAuth(auth))) return ResponseEntity.status(403).body(new ApiResponse<Product>(false, "Forbidden", null));
         if (product.getSlug() == null || product.getSlug().isEmpty()) {
             product.setSlug(product.getName().toLowerCase().replaceAll("[^a-z0-9]+", "-"));
         }
@@ -96,7 +96,7 @@ public class ProductController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Product>> update(@RequestHeader(value = "Authorization", required = false) String auth, @PathVariable Long id, @RequestBody Product updated) {
-        if (!authService.isStaffOrAdmin(authService.getUserFromAuth(auth))) return ResponseEntity.status(403).body(new ApiResponse<>(false, "Forbidden", null));
+        if (!authService.isStaffOrAdmin(authService.getUserFromAuth(auth))) return ResponseEntity.status(403).body(new ApiResponse<Product>(false, "Forbidden", null));
         return productRepository.findById(id).map(p -> {
             p.setName(updated.getName());
             p.setDescription(updated.getDescription());
@@ -109,11 +109,11 @@ public class ProductController {
             p.setCategoryId(updated.getCategoryId());
             productRepository.save(p);
             return ResponseEntity.ok(new ApiResponse<>(true, "Updated", p));
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.status(404).body(new ApiResponse<Product>(false, "Not Found", null)));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@RequestHeader(value = "Authorization", required = false) String auth, @PathVariable Long id) {
+    public ResponseEntity<?> delete(@RequestHeader(value = "Authorization", required = false) String auth, @PathVariable Long id) {
         if (!authService.isStaffOrAdmin(authService.getUserFromAuth(auth))) return ResponseEntity.status(403).build();
         return productRepository.findById(id).map(p -> {
             productRepository.delete(p);
@@ -131,7 +131,7 @@ public class ProductController {
                     .limit(count)
                     .toList();
             return ResponseEntity.ok(new ApiResponse<>(true, null, related));
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.status(404).body(new ApiResponse<List<Product>>(false, "Not Found", null)));
     }
 
     @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

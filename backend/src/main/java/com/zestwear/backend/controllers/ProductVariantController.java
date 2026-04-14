@@ -29,7 +29,7 @@ public class ProductVariantController {
 
     @PostMapping("/api/products/{productId}/variants")
     public ResponseEntity<ApiResponse<ProductVariant>> create(@RequestHeader(value = "Authorization", required = false) String auth, @PathVariable Long productId, @RequestBody ProductVariant v) {
-        if (!authService.isStaffOrAdmin(authService.getUserFromAuth(auth))) return ResponseEntity.status(403).body(new ApiResponse<>(false, "Forbidden", null));
+        if (!authService.isStaffOrAdmin(authService.getUserFromAuth(auth))) return ResponseEntity.status(403).body(new ApiResponse<ProductVariant>(false, "Forbidden", null));
         v.setProductId(productId);
         ProductVariant saved = variantRepository.save(v);
         return ResponseEntity.ok(new ApiResponse<>(true, "Created", saved));
@@ -45,11 +45,11 @@ public class ProductVariantController {
             v.setStock(updated.getStock());
             variantRepository.save(v);
             return ResponseEntity.ok(new ApiResponse<>(true, "Updated", v));
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.status(404).body(new ApiResponse<ProductVariant>(false, "Not Found", null)));
     }
 
     @DeleteMapping("/api/product-variants/{id}")
-    public ResponseEntity<Void> delete(@RequestHeader(value = "Authorization", required = false) String auth, @PathVariable Long id) {
+    public ResponseEntity<?> delete(@RequestHeader(value = "Authorization", required = false) String auth, @PathVariable Long id) {
         if (!authService.isStaffOrAdmin(authService.getUserFromAuth(auth))) return ResponseEntity.status(403).build();
         return variantRepository.findById(id).map(v -> {
             variantRepository.delete(v);

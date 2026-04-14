@@ -51,19 +51,19 @@ public class OrderController {
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<List<Order>>> myOrders(@RequestHeader(value = "Authorization", required = false) String auth) {
         User user = authService.getUserFromAuth(auth);
-        if (user == null) return ResponseEntity.status(401).body(new ApiResponse<>(false, "Unauthorized", null));
+        if (user == null) return ResponseEntity.status(401).body(new ApiResponse<List<Order>>(false, "Unauthorized", null));
         return ResponseEntity.ok(new ApiResponse<>(true, null, orderRepository.findByUserId(user.getId())));
     }
 
     @GetMapping("/my/{id}")
     public ResponseEntity<ApiResponse<Order>> myOrderDetail(@RequestHeader(value = "Authorization", required = false) String auth, @PathVariable Long id) {
         User user = authService.getUserFromAuth(auth);
-        if (user == null) return ResponseEntity.status(401).body(new ApiResponse<>(false, "Unauthorized", null));
+        if (user == null) return ResponseEntity.status(401).body(new ApiResponse<Order>(false, "Unauthorized", null));
         return orderRepository.findById(id).map(o -> {
-            if (!o.getUserId().equals(user.getId())) return ResponseEntity.status(403).body(new ApiResponse<>(false, "Forbidden", null));
+            if (!o.getUserId().equals(user.getId())) return ResponseEntity.status(403).body(new ApiResponse<Order>(false, "Forbidden", null));
             o.setItems(orderItemRepository.findByOrderId(o.getId()));
             return ResponseEntity.ok(new ApiResponse<>(true, null, o));
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.status(404).body(new ApiResponse<Order>(false, "Not Found", null)));
     }
 
     @PostMapping
@@ -90,7 +90,7 @@ public class OrderController {
         // Build order from cart items
         List<CartItem> cartItems = cartItemRepository.findByUserId(user.getId());
         if (cartItems == null || cartItems.isEmpty()) {
-            return ResponseEntity.badRequest().body(new ApiResponse<>(false, "Cart is empty", null));
+            return ResponseEntity.badRequest().body(new ApiResponse<Map<String, Object>>(false, "Cart is empty", null));
         }
 
         double subTotal = cartItems.stream().mapToDouble(i -> i.getUnitPrice() * i.getQuantity()).sum();
@@ -156,14 +156,14 @@ public class OrderController {
         Map<String, Object> data = new HashMap<>();
         data.put("id", order.getId());
         data.put("orderCode", order.getOrderCode());
-        return ResponseEntity.ok(new ApiResponse<>(true, "Created", data));
+        return ResponseEntity.ok(new ApiResponse<Map<String, Object>>(true, "Created", data));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Order>>> all(@RequestHeader(value = "Authorization", required = false) String auth) {
         // admin-only
         User me = authService.getUserFromAuth(auth);
-        if (!authService.isAdmin(me)) return ResponseEntity.status(403).body(new ApiResponse<>(false, "Forbidden", null));
+        if (!authService.isAdmin(me)) return ResponseEntity.status(403).body(new ApiResponse<List<Order>>(false, "Forbidden", null));
         return ResponseEntity.ok(new ApiResponse<>(true, null, orderRepository.findAll()));
     }
 
@@ -172,7 +172,7 @@ public class OrderController {
         return orderRepository.findById(id).map(o -> {
             o.setItems(orderItemRepository.findByOrderId(o.getId()));
             return ResponseEntity.ok(new ApiResponse<>(true, null, o));
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.status(404).body(new ApiResponse<Order>(false, "Not Found", null)));
     }
 
     @PutMapping("/{id}/status")
@@ -188,7 +188,7 @@ public class OrderController {
             OrderStatusHistory h = new OrderStatusHistory(o.getId(), newStatus, note, actorId);
             historyRepository.save(h);
             return ResponseEntity.ok(new ApiResponse<>(true, "Updated", o));
-        }).orElse(ResponseEntity.notFound().build());
+        }).orElse(ResponseEntity.status(404).body(new ApiResponse<Order>(false, "Not Found", null)));
     }
 
     @PostMapping("/validate-coupon")
@@ -197,16 +197,16 @@ public class OrderController {
         Double orderAmount = Double.valueOf(String.valueOf(body.getOrDefault("orderAmount", 0)));
         Coupon coupon = couponRepository.findByCode(code);
         if (coupon == null || !coupon.getActive()) {
-            return ResponseEntity.ok(new ApiResponse<>(false, "Invalid coupon", null));
+            return ResponseEntity.ok(new ApiResponse<Map<String, Object>>(false, "Invalid coupon", null));
         }
         if (coupon.getExpiresAt() != null && coupon.getExpiresAt().isBefore(java.time.LocalDateTime.now())) {
-            return ResponseEntity.ok(new ApiResponse<>(false, "Coupon expired", null));
+            return ResponseEntity.ok(new ApiResponse<Map<String, Object>>(false, "Coupon expired", null));
         }
         if (orderAmount < coupon.getMinOrderAmount()) {
-            return ResponseEntity.ok(new ApiResponse<>(false, "Minimum order amount not met", null));
+            return ResponseEntity.ok(new ApiResponse<Map<String, Object>>(false, "Minimum order amount not met", null));
         }
         if (coupon.getUsageLimit() != null && coupon.getUsedCount() != null && coupon.getUsedCount() >= coupon.getUsageLimit()) {
-            return ResponseEntity.ok(new ApiResponse<>(false, "Coupon usage limit reached", null));
+            return ResponseEntity.ok(new ApiResponse<Map<String, Object>>(false, "Coupon usage limit reached", null));
         }
         double discount = 0.0;
         if ("PERCENT".equalsIgnoreCase(coupon.getType())) {
@@ -219,6 +219,6 @@ public class OrderController {
         data.put("discountAmount", discount);
         data.put("newTotal", Math.max(0.0, orderAmount - discount));
         data.put("coupon", coupon);
-        return ResponseEntity.ok(new ApiResponse<>(true, "OK", data));
+        return ResponseEntity.ok(new ApiResponse<Map<String, Object>>(true, "OK", data));
     }
 }
